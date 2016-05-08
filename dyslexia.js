@@ -29,7 +29,6 @@ function getWordsInTextNode(textNode){
 }
 
 function messUpWords (textNodes) {
-	console.log("yes");
 	for (var i = 0; i < textNodes.length; i++) {
 		var node = textNodes[i];
 		var wordsInTextNodes = getWordsInTextNode(node);
