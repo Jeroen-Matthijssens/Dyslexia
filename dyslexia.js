@@ -1,90 +1,77 @@
-$(document).ready(function(){
-	initMessUpLoop(100);
-})
+(function (document, window) {
 
-function getTextNodesIn(element) {
-	return $(element).find(":not(iframe,script)").addBack().contents().filter(function() {
-		return this.nodeType == 3;
-	});
-};
-function isLetter(char) {
-	return /^[\d]$/.test(char);
-}
-
-var textNodes = getTextNodesIn($("*"));
-function getWordsInTextNode(textNode){
-	var words = [];
-	var regex = /\w+/g;
-	var match;
-	while ((match = regex.exec(textNode.nodeValue)) != null){
-		var word = match[0];
-		var position = match.index;
-		words.push({
-			word: word,
-			length: word.length,
-			position: position
-		});
+	function getRandomInt (min, max) {
+		return Math.floor (Math.random () * (max - min + 1) + min);
 	}
-	return words;
-}
 
-function messUpWords (textNodes) {
-	for (var i = 0; i < textNodes.length; i++) {
-		var node = textNodes[i];
-		var wordsInTextNodes = getWordsInTextNode(node);
-		for (var j = 0; j < wordsInTextNodes.length; j++) {
-			var wordInfo = wordsInTextNodes[j];
-			// Only change a tenth of the words each round.
-			if (Math.random() > 2/10) {
+	function Dyslexia (options) {
+		var options = options || {};
+		this.domNodeSelector = options.selector || options.domNodeSelector || '.dyslexia';
+		this.delay = options.delay || 2000;
+		this.textNodes = [];
+	}
+
+	Dyslexia.prototype.initialize = function initialize () {
+		this.textNodes = this.getTextNodes ();
+		window.setInterval (this.scrambleTexts.bind (this), this.delay);
+	};
+
+	Dyslexia.prototype.getTextNodes = function getTextNodes () {
+		var nodes = document.querySelectorAll (this.domNodeSelector);
+		var queue = Array.prototype.concat.apply ([], nodes);
+		var texts = [];
+
+		while ( queue.length > 0 ) {
+			var node = queue.pop ();
+
+			if ( node.nodeName === '#text' ) {
+				texts.push (node);
 				continue;
 			}
-			var position = wordInfo.position;
-			var length = wordInfo.length;
-			var word = wordInfo.word;
-			var messedUpWord = messUpWord(word);
-			var before = node.nodeValue.slice(0, position);
-			var after  = node.nodeValue.slice(position + length);
-			node.nodeValue = before + messedUpWord + after;
-		};
+
+			for ( var i = 0; i < node.childNodes.length; i++ ) {
+				queue.push (node.childNodes[i]);
+			}
+		}
+
+		return texts;
 	};
-}
 
-function messUpWord (word) {
-	if (word.length < 3) {
-		return word;
+	Dyslexia.prototype.scrambleTexts = function scrambleTexts () {
+		var newNodes = this.textNodes
+			.map (function (node) { return node.textContent; })
+			.map (this.scrambleWords.bind (this))
+			.map (function (words) { return document.createTextNode (words); });
+
+		for ( var i = 0; i < newNodes.length; i++ ) {
+			var currentNode = this.textNodes[i];
+			var newNode = newNodes[i];
+			currentNode.parentNode.replaceChild (newNode, currentNode);
+		}
+
+		this.textNodes = newNodes;
 	}
-	return word[0] + messUpMessyPart(word.slice(1, -1)) + word[word.length - 1];
-}
 
-function messUpMessyPart (messyPart) {
-	if (messyPart.length < 2) {
-		return messyPart;
-	}
-	var a, b;
-	while (!(a < b)) {
-		a = getRandomInt(0, messyPart.length - 1);
-		b = getRandomInt(0, messyPart.length - 1);
-	}
-	return swapLetters(messyPart, a, b);
-}
+	Dyslexia.prototype.scrambleWords = function scrambleWords (sentence) {
+		var words = sentence.split (/\b/);
+		return words.map (this.scrambleWord.bind (this)).join ('');
+	};
 
-String.prototype.replaceAt=function(index, character) {
-    return this.substr(0, index) + character + this.substr(index+character.length);
-}
+	Dyslexia.prototype.scrambleWord = function scrambleWord (word) {
+		if ( ! word || word.length < 4 ) { return word; }
+		if ( ! word.match (/(\w|\d)+/) ) { return word; }
 
-function swapLetters(string, a, b){
-	var temp = string[a];
-	string = string.replaceAt(a, string[b]);
-	string = string.replaceAt(b, temp);
-	return string;
-}
+		var chars = word.split ('');
+		var a = getRandomInt(1, chars.length - 3);
+		var b = getRandomInt(1, chars.length - 3);
 
-function getRandomInt(min, max) {
-	return Math.floor(Math.random() * (max - min + 1) + min);
-}
-//setInterval(messUpWords, 50);
+		var c = chars[a];
+		chars[a] = chars[b];
+		chars[b] = c;
 
-function initMessUpLoop(delay){
-	var textNodes = getTextNodesIn($("body"));
-	setInterval(function(){messUpWords(textNodes)}, delay);
-}
+		return chars.join ('');
+	};
+
+	window.Dyslexia = window.Dyslexia || Dyslexia;
+
+} (document, window));
