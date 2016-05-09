@@ -1,4 +1,4 @@
-(function (document, window) {
+(function (scope, document, setInterval) {
 
 	function getRandomInt (min, max) {
 		return Math.floor (Math.random () * (max - min + 1) + min);
@@ -13,7 +13,7 @@
 
 	Dyslexia.prototype.initialize = function initialize () {
 		this.textNodes = this.getTextNodes ();
-		window.setInterval (this.scrambleTexts.bind (this), this.delay);
+		setInterval (this.scrambleTexts.bind (this), this.delay);
 	};
 
 	Dyslexia.prototype.getTextNodes = function getTextNodes () {
@@ -72,6 +72,6 @@
 		return chars.join ('');
 	};
 
-	window.Dyslexia = window.Dyslexia || Dyslexia;
+	scope.Dyslexia = scope.Dyslexia || Dyslexia;
 
-} (document, window));
+} (window, document, window.setInterval));
